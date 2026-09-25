@@ -28,7 +28,11 @@ await build({
   // Bundled packages read import.meta.url, which Netlify's own re-bundling (to CommonJS) turns into
   // undefined. Point every use at a value that exists in both worlds: __filename under CommonJS,
   // import.meta.url under plain ESM. Also give ESM a global require for bundled CommonJS code.
-  define: { 'import.meta.url': '__importMetaUrl' },
+  define: {
+    'import.meta.url': '__importMetaUrl',
+    // Lets /api/_diag report which commit is actually deployed (Netlify sets COMMIT_REF at build time).
+    'process.env.BUILD_COMMIT': JSON.stringify((process.env.COMMIT_REF ?? 'local').slice(0, 7)),
+  },
   banner: {
     js: [
       "import { createRequire as __createRequire } from 'node:module';",
