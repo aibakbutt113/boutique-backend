@@ -2,8 +2,8 @@
 // Requests to /api/* are routed here by the redirect in netlify.toml.
 import serverless from 'serverless-http';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../dist/app.module.js';
-import { configureApp } from '../../dist/setup.js';
+import { AppModule } from '../dist/app.module.js';
+import { configureApp } from '../dist/setup.js';
 
 let cached;
 

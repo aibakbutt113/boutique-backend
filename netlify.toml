@@ -1,5 +1,6 @@
 [build]
-  command = "npx prisma generate && npm run build"
+  # Compile Nest, then bundle it into netlify/functions/api.mjs (see scripts/bundle-function.mjs).
+  command = "npx prisma generate && npm run build && node scripts/bundle-function.mjs"
   publish = "public"
 
 [build.environment]
@@ -7,12 +8,10 @@
 
 [functions]
   directory = "netlify/functions"
-  # Trace and copy files instead of bundling: Nest relies on decorator metadata
-  # that a bundler can strip, and Prisma ships a native engine binary.
-  node_bundler = "nft"
+  node_bundler = "esbuild"
+  # Prisma stays outside the bundle: it needs its native engine file at runtime.
+  external_node_modules = ["@prisma/client", ".prisma/client"]
   included_files = [
-    "dist/**",
-    "package.json",
     "prisma/schema.prisma",
     "node_modules/.prisma/client/**",
     "node_modules/@prisma/client/**",
