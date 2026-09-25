@@ -1,0 +1,18 @@
+# dependencies
+/node_modules
+
+# build output
+/dist
+*.tsbuildinfo
+
+# secrets (copy .env.example to .env)
+.env
+.env.*
+!.env.example
+
+# runtime uploads (use object storage in production)
+/uploads
+
+# logs / OS
+*.log
+.DS_Store
