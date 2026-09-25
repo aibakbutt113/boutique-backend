@@ -25,10 +25,17 @@ await build({
   // Prisma loads a native engine file at runtime, so it must stay a real node_modules import.
   external: ['@prisma/client', '.prisma/client'],
   plugins: [optionalNestPackages],
-  // Some bundled CommonJS dependencies call require(); give ESM output a global one.
-  // Assigned (not declared) so it can't clash with anything the platform injects.
+  // Bundled packages read import.meta.url, which Netlify's own re-bundling (to CommonJS) turns into
+  // undefined. Point every use at a value that exists in both worlds: __filename under CommonJS,
+  // import.meta.url under plain ESM. Also give ESM a global require for bundled CommonJS code.
+  define: { 'import.meta.url': '__importMetaUrl' },
   banner: {
-    js: "import { createRequire as __createRequire } from 'node:module'; globalThis.require ??= __createRequire(import.meta.url);",
+    js: [
+      "import { createRequire as __createRequire } from 'node:module';",
+      "import { pathToFileURL as __pathToFileURL } from 'node:url';",
+      "const __importMetaUrl = typeof __filename !== 'undefined' ? __pathToFileURL(__filename).href : import.meta.url;",
+      "if (typeof require === 'undefined') globalThis.require = __createRequire(__importMetaUrl);",
+    ].join('\n'),
   },
   logLevel: 'info',
 });
