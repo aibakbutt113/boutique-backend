@@ -8,15 +8,36 @@ import { configureApp } from '../dist/setup.js';
 let cached;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: ['error', 'warn'] });
+  // abortOnError:false makes a startup failure throw instead of killing the process,
+  // so the handler below can report it (Netlify would otherwise just show "exit status 1").
+  const app = await NestFactory.create(AppModule, { logger: ['error', 'warn'], abortOnError: false });
   configureApp(app);
   await app.init();
   return serverless(app.getHttpAdapter().getInstance());
 }
 
+/** First line of an error, with any connection string credentials removed. */
+const describe = (err) =>
+  String(err?.message ?? err)
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => l && !l.startsWith('Invalid `'))
+    ?.replace(/[a-z]+:\/\/\S+/gi, '<url>') ?? 'unknown error';
+
 export const handler = async (event, context) => {
-  cached ??= bootstrap();
-  const run = await cached;
+  let run;
+  try {
+    cached ??= bootstrap();
+    run = await cached;
+  } catch (err) {
+    cached = undefined; // let the next request try again
+    console.error('API failed to start:', err);
+    return {
+      statusCode: 500,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: 'API failed to start', detail: describe(err) }),
+    };
+  }
 
   // Depending on how the request was routed, the path arrives either as the original
   // "/api/..." or as "/.netlify/functions/api/...". Normalise to what Nest expects.
