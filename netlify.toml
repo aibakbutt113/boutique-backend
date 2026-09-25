@@ -1,0 +1,31 @@
+[build]
+  command = "npx prisma generate && npm run build"
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+  # Trace and copy files instead of bundling: Nest relies on decorator metadata
+  # that a bundler can strip, and Prisma ships a native engine binary.
+  node_bundler = "nft"
+  included_files = [
+    "dist/**",
+    "package.json",
+    "prisma/schema.prisma",
+    "node_modules/.prisma/client/**",
+    "node_modules/@prisma/client/**",
+  ]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/uploads/*"
+  to = "/.netlify/functions/api/uploads/:splat"
+  status = 200
+  force = true
