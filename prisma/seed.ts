@@ -16,6 +16,17 @@ const categories = [
   { name: 'Sale', tone: 'blush' },
 ];
 
+// Fictional labels (not real brands) so the "Shop by Brand" strip has more than 5 to page through.
+const brands = [
+  { name: 'Anaya Studio', tone: 'rose' },
+  { name: 'Rosewood Atelier', tone: 'blush' },
+  { name: 'Noor & Co', tone: 'cream' },
+  { name: 'Mehrma Couture', tone: 'sand' },
+  { name: 'Ivory Thread', tone: 'cream' },
+  { name: 'Gulnar Designs', tone: 'rose' },
+  { name: 'Saffron & Silk', tone: 'blush' },
+];
+
 type P = [string, string, string, number, number | null, boolean, string];
 // name, category, fabric, price (PKR), salePrice, isNew, tone
 const products: P[] = [
@@ -85,15 +96,31 @@ async function main() {
     catIds[c.name] = cat.id;
   }
 
-  for (const [name, cat, fabric, price, salePrice, isNew, tone] of products) {
+  const brandIds: string[] = [];
+  for (const [position, b] of brands.entries()) {
+    const brand = await prisma.brand.upsert({
+      where: { slug: slugify(b.name) },
+      update: { position, image: ph(b.tone, '-') },
+      create: { name: b.name, slug: slugify(b.name), position, image: ph(b.tone, '-') },
+    });
+    brandIds.push(brand.id);
+  }
+
+  for (const [i, [name, cat, fabric, price, salePrice, isNew, tone]] of products.entries()) {
     const slug = slugify(name);
-    if (await prisma.product.findUnique({ where: { slug } })) continue;
+    const existing = await prisma.product.findUnique({ where: { slug } });
+    if (existing) {
+      // Backfill brandId on rows seeded before brands existed, without touching anything else.
+      if (!existing.brandId) await prisma.product.update({ where: { id: existing.id }, data: { brandId: brandIds[i % brandIds.length] } });
+      continue;
+    }
     await prisma.product.create({
       data: {
         name, slug, fabric, price, salePrice, isNew,
         isFeatured: isNew,
         description: `${name} in soft ${fabric.toLowerCase()}. Designed for everyday elegance and festive occasions, with a comfortable fit and quality finishing.`,
         categoryId: catIds[cat],
+        brandId: brandIds[i % brandIds.length],
         images: { create: [0, 1, 2].map((position) => ({ position, url: ph(tone, name) })) },
         variants: {
           create: sizes.flatMap((size) => colors.map((color) => ({ size, color, stock: 3 + Math.floor(Math.random() * 12) }))),

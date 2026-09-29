@@ -6,7 +6,7 @@ FROM node:22-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm i
 COPY prisma ./prisma
 RUN npx prisma generate
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -
 ENV NODE_ENV=production
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm i --omit=dev
 COPY prisma ./prisma
 RUN npx prisma generate
 COPY --from=build /app/dist ./dist

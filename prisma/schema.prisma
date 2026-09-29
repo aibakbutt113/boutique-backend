@@ -82,6 +82,17 @@ model Category {
   position Int        @default(0)
 }
 
+// Designer/label shown in the "Shop by Brand" home page strip and admin panel.
+model Brand {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  image    String?
+  position Int       @default(0)
+  active   Boolean   @default(true)
+  products Product[]
+}
+
 model Product {
   id           String           @id @default(cuid())
   name         String
@@ -95,6 +106,8 @@ model Product {
   isActive     Boolean          @default(true)
   categoryId   String
   category     Category         @relation(fields: [categoryId], references: [id])
+  brandId      String?
+  brand        Brand?           @relation(fields: [brandId], references: [id], onDelete: SetNull)
   images       ProductImage[]
   variants     ProductVariant[]
   reviews      Review[]

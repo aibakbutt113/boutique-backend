@@ -19,12 +19,14 @@ export class ProductDto {
   @IsOptional() @IsBoolean() isFeatured?: boolean;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsString() categoryId: string;
+  @IsOptional() @IsString() brandId?: string | null;
   @IsOptional() @IsArray() @IsString({ each: true }) images?: string[];
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => VariantDto) variants?: VariantDto[];
 }
 
 export class ProductQueryDto {
   @IsOptional() @IsString() category?: string;
+  @IsOptional() @IsString() brand?: string;
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsString() fabric?: string;
   @IsOptional() @IsString() size?: string;
@@ -42,4 +44,11 @@ export class CategoryDto {
   @IsString() name: string;
   @IsOptional() @IsString() image?: string;
   @IsOptional() @IsString() parentId?: string;
+}
+
+export class BrandDto {
+  @IsString() name: string;
+  @IsOptional() @IsString() image?: string;
+  @IsOptional() @IsInt() position?: number;
+  @IsOptional() @IsBoolean() active?: boolean;
 }

@@ -1,13 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard, Roles, RolesGuard } from '../common/auth.js';
 import { CatalogService } from './catalog.service.js';
-import { CategoryDto, ProductDto, ProductQueryDto } from './catalog.dto.js';
+import { BrandDto, CategoryDto, ProductDto, ProductQueryDto } from './catalog.dto.js';
 
 @Controller()
 export class CatalogController {
   constructor(private catalog: CatalogService) {}
 
   @Get('categories') categories() { return this.catalog.categories(); }
+  @Get('brands') brands() { return this.catalog.brands(); }
   @Get('products') products(@Query() q: ProductQueryDto) { return this.catalog.products(q); }
   @Get('products/:slug') product(@Param('slug') slug: string) { return this.catalog.product(slug); }
 
@@ -28,4 +29,16 @@ export class CatalogController {
 
   @Delete('admin/categories/:id') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')
   removeCategory(@Param('id') id: string) { return this.catalog.removeCategory(id); }
+
+  @Get('admin/brands') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')
+  adminBrands() { return this.catalog.adminBrands(); }
+
+  @Post('admin/brands') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')
+  createBrand(@Body() d: BrandDto) { return this.catalog.createBrand(d); }
+
+  @Patch('admin/brands/:id') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')
+  updateBrand(@Param('id') id: string, @Body() d: Partial<BrandDto>) { return this.catalog.updateBrand(id, d); }
+
+  @Delete('admin/brands/:id') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('ADMIN')
+  removeBrand(@Param('id') id: string) { return this.catalog.removeBrand(id); }
 }

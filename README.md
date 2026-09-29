@@ -11,6 +11,14 @@ NestJS + Prisma + PostgreSQL. Ships with a Docker setup: **Postgres, the API and
    curl -fsSL https://get.docker.com | sh
    sudo usermod -aG docker $USER   # then log out and back in
    ```
+   On Amazon Linux, `get.docker.com` often skips the Compose plugin, leaving `docker compose` unrecognized
+   (`docker: 'compose' is not a docker command` or a stray flag-parsing error). Fix it with:
+   ```bash
+   mkdir -p ~/.docker/cli-plugins
+   curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o ~/.docker/cli-plugins/docker-compose
+   chmod +x ~/.docker/cli-plugins/docker-compose
+   docker compose version   # should print a version, not an error
+   ```
 4. **Clone and configure:**
    ```bash
    git clone <this repo> boutique-backend && cd boutique-backend

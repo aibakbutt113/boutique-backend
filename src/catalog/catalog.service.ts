@@ -9,8 +9,11 @@ export const slugify = (s: string) =>
 const productInclude = {
   images: { orderBy: { position: 'asc' } },
   category: true,
+  brand: true,
   variants: true,
 } satisfies Prisma.ProductInclude;
+
+const brandSelect = { id: true, name: true, slug: true, image: true } satisfies Prisma.BrandSelect;
 
 @Injectable()
 export class CatalogService {
@@ -18,6 +21,10 @@ export class CatalogService {
 
   categories() {
     return this.prisma.category.findMany({ orderBy: { position: 'asc' }, include: { children: true } });
+  }
+
+  brands() {
+    return this.prisma.brand.findMany({ where: { active: true }, orderBy: { position: 'asc' }, select: brandSelect });
   }
 
   async products(q: ProductQueryDto, admin = false) {
@@ -28,6 +35,10 @@ export class CatalogService {
         include: { children: true },
       });
       where.categoryId = { in: cat ? [cat.id, ...cat.children.map((c) => c.id)] : [] };
+    }
+    if (q.brand) {
+      const brand = await this.prisma.brand.findUnique({ where: { slug: q.brand } });
+      where.brandId = brand?.id ?? '__none__';
     }
     if (q.q) where.OR = [
       { name: { contains: q.q, mode: 'insensitive' } },
@@ -117,6 +128,27 @@ export class CatalogService {
 
   async removeCategory(id: string) {
     await this.prisma.category.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  adminBrands() {
+    return this.prisma.brand.findMany({ orderBy: { position: 'asc' } });
+  }
+
+  async createBrand(d: { name: string; image?: string; position?: number }) {
+    const last = await this.prisma.brand.aggregate({ _max: { position: true } });
+    return this.prisma.brand.create({
+      data: { name: d.name, slug: slugify(d.name), image: d.image, position: d.position ?? (last._max.position ?? -1) + 1 },
+    });
+  }
+
+  updateBrand(id: string, d: { name?: string; image?: string; position?: number; active?: boolean }) {
+    return this.prisma.brand.update({ where: { id }, data: d });
+  }
+
+  async removeBrand(id: string) {
+    // Unassigns via onDelete: SetNull rather than deleting the products themselves.
+    await this.prisma.brand.delete({ where: { id } });
     return { ok: true };
   }
 }
