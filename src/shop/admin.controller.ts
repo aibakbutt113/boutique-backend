@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { JwtAuthGuard, Roles, RolesGuard } from '../common/auth.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { OrdersService } from './orders.service.js';
-import { CouponDto, StatusDto } from './shop.dto.js';
+import { BannerDto, CouponDto, StatusDto } from './shop.dto.js';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -74,4 +74,25 @@ export class AdminController {
   }
 
   @Get('subscribers') subscribers() { return this.prisma.subscriber.findMany({ orderBy: { createdAt: 'desc' } }); }
+
+  // ---- home page hero banners ----
+  @Get('banners')
+  banners() { return this.prisma.banner.findMany({ orderBy: { position: 'asc' } }); }
+
+  @Post('banners')
+  async createBanner(@Body() d: BannerDto) {
+    const last = await this.prisma.banner.aggregate({ _max: { position: true } });
+    return this.prisma.banner.create({ data: { ...d, position: d.position ?? (last._max.position ?? -1) + 1 } });
+  }
+
+  @Patch('banners/:id')
+  updateBanner(@Param('id') id: string, @Body() d: Partial<BannerDto>) {
+    return this.prisma.banner.update({ where: { id }, data: d });
+  }
+
+  @Delete('banners/:id')
+  async deleteBanner(@Param('id') id: string) {
+    await this.prisma.banner.delete({ where: { id } });
+    return { ok: true };
+  }
 }

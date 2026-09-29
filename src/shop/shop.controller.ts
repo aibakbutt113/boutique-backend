@@ -6,6 +6,8 @@ import {
   AddressDto, CartSyncDto, CreateOrderDto, ProfileDto, ReturnDto, ReviewDto, SubscribeDto, ValidateCouponDto,
 } from './shop.dto.js';
 
+const bannerSelect = { id: true, imageUrl: true } as const;
+
 const cartInclude = {
   product: { include: { images: { orderBy: { position: 'asc' }, take: 1 } } },
   variant: true,
@@ -28,6 +30,11 @@ export class ShopController {
       flat: +(process.env.FLAT_SHIPPING ?? 250),
       freeThreshold: +(process.env.FREE_SHIPPING_THRESHOLD ?? 5000),
     };
+  }
+
+  @Get('banners')
+  banners() {
+    return this.prisma.banner.findMany({ where: { active: true }, orderBy: { position: 'asc' }, select: bannerSelect });
   }
 
   // ---- profile & addresses ----

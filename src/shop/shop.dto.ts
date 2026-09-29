@@ -64,3 +64,9 @@ export class CouponDto {
   @IsOptional() @IsString() expiresAt?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
+
+export class BannerDto {
+  @IsString() imageUrl: string;
+  @IsOptional() @IsInt() position?: number;
+  @IsOptional() @IsBoolean() active?: boolean;
+}

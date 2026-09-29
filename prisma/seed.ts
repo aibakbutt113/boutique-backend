@@ -60,16 +60,20 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
-    where: { email: 'customer@boutique.pk' },
-    update: {},
-    create: {
-      email: 'customer@boutique.pk',
-      name: 'Demo Customer',
-      phone: '03001234567',
-      passwordHash: await bcrypt.hash('Customer@12345', 10),
-    },
-  });
+  // A known-password test account: created in development, but never on a production server
+  // unless SEED_DEMO_CUSTOMER=true is set explicitly.
+  if (process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_CUSTOMER === 'true') {
+    await prisma.user.upsert({
+      where: { email: 'customer@boutique.pk' },
+      update: {},
+      create: {
+        email: 'customer@boutique.pk',
+        name: 'Demo Customer',
+        phone: '03001234567',
+        passwordHash: await bcrypt.hash('Customer@12345', 10),
+      },
+    });
+  }
 
   const catIds: Record<string, string> = {};
   for (const [position, c] of categories.entries()) {
@@ -103,6 +107,16 @@ async function main() {
     { code: 'FLAT500', type: 'FIXED' as const, value: 500, minOrder: 6000 },
   ])
     await prisma.coupon.upsert({ where: { code: c.code }, update: {}, create: c });
+
+  // Placeholder hero slides so the home page isn't empty before an admin uploads real photos.
+  if ((await prisma.banner.count()) === 0)
+    await prisma.banner.createMany({
+      data: [
+        { imageUrl: ph('rose', '-'), position: 0 },
+        { imageUrl: ph('blush', '-'), position: 1 },
+        { imageUrl: ph('cream', '-'), position: 2 },
+      ],
+    });
 
   console.log('Seeded.');
 }
