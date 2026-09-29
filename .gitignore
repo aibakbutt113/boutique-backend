@@ -16,7 +16,3 @@
 # logs / OS
 *.log
 .DS_Store
-
-# generated Netlify function bundle
-/netlify/functions/
-/.tmpb/

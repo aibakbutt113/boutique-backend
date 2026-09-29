@@ -1,0 +1,71 @@
+# Postgres + the API + Caddy (HTTPS reverse proxy).
+#   cp .env.example .env    # then edit the values
+#   docker compose up -d --build
+name: boutique
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: boutique
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d boutique"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No published ports: only the api container can reach the database.
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # Built from the Postgres settings above; the DATABASE_URL in .env is for running outside Docker.
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/boutique?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ADMIN_URL: ${ADMIN_URL:-http://localhost:3001}
+      FREE_SHIPPING_THRESHOLD: ${FREE_SHIPPING_THRESHOLD:-5000}
+      FLAT_SHIPPING: ${FLAT_SHIPPING:-250}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@boutique.pk}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      RUN_SEED: ${RUN_SEED:-false}
+      SEED_DEMO_CUSTOMER: ${SEED_DEMO_CUSTOMER:-false}
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      # Local only (for `curl` checks on the server). Public traffic goes through Caddy.
+      - "127.0.0.1:4000:4000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

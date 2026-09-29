@@ -3,14 +3,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'node:path';
 import { mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { JwtAuthGuard, Roles, RolesGuard } from '../common/auth.js';
 
-// Serverless disks are read-only except /tmp, and /tmp is wiped between invocations:
-// uploads there are temporary. Use cloud storage for real product photos in production.
-export const UPLOAD_DIR = process.env.AWS_LAMBDA_FUNCTION_NAME
-  ? join(tmpdir(), 'uploads')
-  : join(process.cwd(), 'uploads');
+// Uploaded images live on local disk. In Docker this folder is a mounted volume so files survive
+// container rebuilds; on other hosts use persistent storage or swap in object storage (S3).
+export const UPLOAD_DIR = join(process.cwd(), 'uploads');
 mkdirSync(UPLOAD_DIR, { recursive: true });
 
 @Controller('admin/upload')

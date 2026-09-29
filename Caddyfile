@@ -1,0 +1,7 @@
+# Terminates HTTPS and forwards to the API. Caddy gets and renews a free Let's Encrypt
+# certificate automatically for API_DOMAIN (set in .env). With the default "localhost" it
+# uses a local self-signed certificate instead.
+{$API_DOMAIN:localhost} {
+	encode gzip
+	reverse_proxy api:4000
+}
